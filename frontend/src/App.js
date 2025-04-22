@@ -78,14 +78,8 @@ function App() {
     if (!task.trim()) return;
 
     try {
-      const taskData = {
-        title: task,
-        description: task,
-      };
-
-      if (reminder) {
-        taskData.reminder = reminder;
-      }
+      const taskData = { title: task, description: task };
+      if (reminder) taskData.reminder = reminder;
 
       const res = await axios.post(
         "http://localhost:5000/api/tasks",
@@ -109,16 +103,15 @@ function App() {
 
   const handleDelete = async (id) => {
     try {
-      const updatedTasks = tasks.map((task) =>
-        task._id === id ? { ...task, deleted: true } : task
+      setTasks((prev) =>
+        prev.map((t) => (t._id === id ? { ...t, deleted: true } : t))
       );
-      setTasks(updatedTasks);
 
       setTimeout(async () => {
         await axios.delete(`http://localhost:5000/api/tasks/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setTasks(tasks.filter((item) => item._id !== id));
+        setTasks((prev) => prev.filter((item) => item._id !== id));
       }, 500);
     } catch (error) {
       console.error("Error deleting task:", error);
@@ -167,11 +160,13 @@ function App() {
               />
               <button type="submit">{isSignup ? "Sign Up" : "Login"}</button>
               <p>
-                {isSignup ? "Already have an account?" : "Don't have an account?"}
+                {isSignup
+                  ? "Already have an account?"
+                  : "Don't have an account?"}{" "}
                 <button
                   type="button"
                   onClick={() => setIsSignup(!isSignup)}
-                  style={{ marginLeft: "10px" }}
+                  className="switch-btn"
                 >
                   {isSignup ? "Login" : "Sign Up"}
                 </button>
@@ -229,20 +224,27 @@ function App() {
               <h3>Your Tasks</h3>
               <ul>
                 {tasks.map((item) => (
-                  <li key={item._id} className={item.deleted ? "deleted" : ""}>
+                  <li
+                    key={item._id}
+                    className={item.deleted ? "deleted" : ""}
+                  >
                     <strong>{item.title}</strong>
                     <br />
                     <small>
-                      Created: {new Date(item.createdAt).toLocaleString()}
+                      Created:{" "}
+                      {new Date(item.createdAt).toLocaleString()}
                     </small>
                     <br />
                     {item.reminder && (
                       <small>
-                        Reminder: {new Date(item.reminder).toLocaleString()}
+                        Reminder:{" "}
+                        {new Date(item.reminder).toLocaleString()}
                       </small>
                     )}
                     <br />
-                    <button onClick={() => handleDelete(item._id)}>Delete</button>
+                    <button onClick={() => handleDelete(item._id)}>
+                      Delete
+                    </button>
                   </li>
                 ))}
               </ul>
