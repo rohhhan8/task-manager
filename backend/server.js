@@ -3,9 +3,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cron = require("node-cron");
+const path = require("path"); // ✅ Required to serve frontend
 const Task = require("./models/TaskModel");
 const nodemailer = require("nodemailer");
-
 
 const app = express();
 app.use(cors());
@@ -24,33 +24,32 @@ const taskRoutes = require("./routes/taskRoutes");
 const authRoutes = require("./routes/authRoutes");
 
 // Use Routes
-app.use("/api/auth", authRoutes);   // /register and /login
-app.use("/api/tasks", taskRoutes);  // /api/tasks
+app.use("/api/auth", authRoutes);
+app.use("/api/tasks", taskRoutes);
 
 // Health Check
-app.get("/", (req, res) => {
+app.get("/health", (req, res) => {
   res.send("Backend is running...");
 });
 
-// Create a transporter for Gmail (or another service if you prefer)
+// Create a transporter for Gmail
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.GMAIL_USER, // Your Gmail email address (from .env)
-    pass: process.env.GMAIL_PASSWORD, // Your Gmail app password (from .env)
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASSWORD,
   }
 });
 
-// Helper function to send email
+// Send Email Helper
 const sendReminderEmail = (task) => {
   const mailOptions = {
-    from: process.env.GMAIL_USER, // Your email address
-    to: task.userEmail, // Task's user's email (must be saved in DB)
+    from: process.env.GMAIL_USER,
+    to: task.userEmail,
     subject: `Task Reminder: ${task.title}`,
     text: `Hi! Just a reminder that your task "${task.title}" is due now. Please take action.`
   };
 
-  // Send the email
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
       console.error("Error sending email:", error);
@@ -60,14 +59,12 @@ const sendReminderEmail = (task) => {
   });
 };
 
-// Cron job to check for tasks every minute
+// Cron job to check for reminders
 cron.schedule("* * * * *", async () => {
   console.log("⏰ Cron job running...");
-
   const now = new Date();
 
   try {
-    // Fetch tasks where reminder time has passed and not notified yet
     const upcomingTasks = await Task.find({
       reminder: { $lte: now },
       notified: { $ne: true }
@@ -75,11 +72,7 @@ cron.schedule("* * * * *", async () => {
 
     for (const task of upcomingTasks) {
       console.log(`🔔 Reminder: Task "${task.title}" is due now. User ID: ${task.user}`);
-
-      // Send email to the user
-      await sendReminderEmail(task);  // Send reminder email
-
-      // Mark task as notified
+      await sendReminderEmail(task);
       task.notified = true;
       await task.save();
     }
@@ -87,6 +80,15 @@ cron.schedule("* * * * *", async () => {
     console.error("Error checking reminders:", err);
   }
 });
+
+// ✅ Serve frontend in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "frontend", "build")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "frontend", "build", "index.html"));
+  });
+}
 
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
