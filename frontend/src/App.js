@@ -23,7 +23,7 @@ function App() {
 
   const fetchUserData = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/auth/user", {
+      const res = await axios.get("/api/auth/user", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUserData(res.data);
@@ -35,7 +35,7 @@ function App() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:5000/api/auth/register", {
+      await axios.post("/api/auth/register", {
         username,
         email,
         password,
@@ -51,7 +51,7 @@ function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
+      const res = await axios.post("/api/auth/login", {
         loginInput: identifier,
         password,
       });
@@ -64,7 +64,7 @@ function App() {
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tasks", {
+      const res = await axios.get("/api/tasks", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTasks(res.data);
@@ -81,13 +81,9 @@ function App() {
       const taskData = { title: task, description: task };
       if (reminder) taskData.reminder = reminder;
 
-      const res = await axios.post(
-        "http://localhost:5000/api/tasks",
-        taskData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await axios.post("/api/tasks", taskData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       setTasks([...tasks, res.data]);
       setTask("");
@@ -108,7 +104,7 @@ function App() {
       );
 
       setTimeout(async () => {
-        await axios.delete(`http://localhost:5000/api/tasks/${id}`, {
+        await axios.delete(`/api/tasks/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setTasks((prev) => prev.filter((item) => item._id !== id));
