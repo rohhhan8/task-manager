@@ -76,21 +76,22 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!task.trim()) return;
-  
+
     try {
       const taskData = { title: task, description: task };
-  
+
       if (reminder) {
-        // Convert reminder to UTC format
         const localReminder = new Date(reminder);
-        const utcReminder = new Date(localReminder.getTime() - localReminder.getTimezoneOffset() * 60000);
+        const utcReminder = new Date(
+          localReminder.getTime() - localReminder.getTimezoneOffset() * 60000
+        );
         taskData.reminder = utcReminder.toISOString();
       }
-  
+
       const res = await axios.post("/api/tasks", taskData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-  
+
       setTasks([...tasks, res.data]);
       setTask("");
       setReminder("");
@@ -102,7 +103,6 @@ function App() {
       alert("Error adding task. Check the console for details.");
     }
   };
-  
 
   const handleDelete = async (id) => {
     try {
@@ -120,6 +120,16 @@ function App() {
       console.error("Error deleting task:", error);
     }
   };
+
+  const formatDateTime = (dateString) =>
+    new Date(dateString).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
 
   return (
     <div className="container">
@@ -227,22 +237,13 @@ function App() {
               <h3>Your Tasks</h3>
               <ul>
                 {tasks.map((item) => (
-                  <li
-                    key={item._id}
-                    className={item.deleted ? "deleted" : ""}
-                  >
+                  <li key={item._id} className={item.deleted ? "deleted" : ""}>
                     <strong>{item.title}</strong>
                     <br />
-                    <small>
-                      Created:{" "}
-                      {new Date(item.createdAt).toLocaleString()}
-                    </small>
+                    <small>Created: {formatDateTime(item.createdAt)}</small>
                     <br />
                     {item.reminder && (
-                      <small>
-                        Reminder:{" "}
-                        {new Date(item.reminder).toLocaleString()}
-                      </small>
+                      <small>Reminder: {formatDateTime(item.reminder)}</small>
                     )}
                     <br />
                     <button onClick={() => handleDelete(item._id)}>
