@@ -76,15 +76,21 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!task.trim()) return;
-
+  
     try {
       const taskData = { title: task, description: task };
-      if (reminder) taskData.reminder = reminder;
-
+  
+      if (reminder) {
+        // Convert reminder to UTC format
+        const localReminder = new Date(reminder);
+        const utcReminder = new Date(localReminder.getTime() - localReminder.getTimezoneOffset() * 60000);
+        taskData.reminder = utcReminder.toISOString();
+      }
+  
       const res = await axios.post("/api/tasks", taskData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
+  
       setTasks([...tasks, res.data]);
       setTask("");
       setReminder("");
@@ -96,6 +102,7 @@ function App() {
       alert("Error adding task. Check the console for details.");
     }
   };
+  
 
   const handleDelete = async (id) => {
     try {
