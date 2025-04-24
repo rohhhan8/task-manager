@@ -19,7 +19,7 @@ const taskSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    userEmail: {  // Add this field
+    userEmail: {
       type: String,
       required: true,
     },
@@ -30,5 +30,14 @@ const taskSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Middleware to ensure the reminder is always stored in UTC
+taskSchema.pre("save", function (next) {
+  if (this.reminder) {
+    // Convert reminder to UTC if it's not already in UTC
+    this.reminder = new Date(this.reminder).toISOString();
+  }
+  next();
+});
 
 module.exports = mongoose.model("Task", taskSchema);

@@ -77,30 +77,32 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!task.trim()) return;
-
+  
+    const taskData = { title: task, description: task };
+  
+    if (reminder) {
+      const localReminder = new Date(reminder);
+      const utcReminder = new Date(
+        localReminder.getTime() - localReminder.getTimezoneOffset() * 60000
+      );
+      taskData.reminder = utcReminder.toISOString();
+    }
+  
+    console.log("Task data to be sent:", taskData);  // Log the task data to verify
+  
     try {
-      const taskData = { title: task, description: task };
-
-      if (reminder) {
-        const localReminder = new Date(reminder);
-        const utcReminder = new Date(
-          localReminder.getTime() - localReminder.getTimezoneOffset() * 60000
-        );
-        taskData.reminder = utcReminder.toISOString();
-      }
-
       const res = await axios.post("/api/tasks", taskData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setTasks([...tasks, res.data]);
       setTask("");
       setReminder("");
     } catch (error) {
-      console.error("Error adding task:", error.response ? error.response.data : error.message);
-      alert("Error adding task. Please try again.");
+      console.error("Error adding task:", error);
+      alert("Error adding task. Check the console for details.");
     }
   };
+  
 
   const handleDelete = async (id) => {
     try {
