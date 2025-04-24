@@ -31,11 +31,10 @@ const taskSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Middleware to ensure the reminder is always stored in UTC
+// Middleware to ensure the reminder is always stored as Date (UTC)
 taskSchema.pre("save", function (next) {
   if (this.reminder) {
-    // Convert reminder to UTC if it's not already in UTC
-    this.reminder = new Date(this.reminder).toISOString();
+    this.reminder = new Date(this.reminder); // ensure Date object
   }
   next();
 });

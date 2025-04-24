@@ -10,7 +10,7 @@ function App() {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [token, setToken] = useState(localStorage.getItem('token') || ""); // Check localStorage for token
+  const [token, setToken] = useState(localStorage.getItem('token') || "");
   const [userData, setUserData] = useState(null);
   const [isSignup, setIsSignup] = useState(false);
 
@@ -18,7 +18,7 @@ function App() {
     if (token) {
       fetchTasks();
       fetchUserData();
-      localStorage.setItem('token', token); // Store token in localStorage
+      localStorage.setItem('token', token);
     }
   }, [token]);
 
@@ -77,19 +77,14 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!task.trim()) return;
-  
+
     const taskData = { title: task, description: task };
-  
+
     if (reminder) {
       const localReminder = new Date(reminder);
-      const utcReminder = new Date(
-        localReminder.getTime() - localReminder.getTimezoneOffset() * 60000
-      );
-      taskData.reminder = utcReminder.toISOString();
+      taskData.reminder = localReminder.toISOString(); // ✅ Convert to UTC ISO
     }
-  
-    console.log("Task data to be sent:", taskData);  // Log the task data to verify
-  
+
     try {
       const res = await axios.post("/api/tasks", taskData, {
         headers: { Authorization: `Bearer ${token}` },
@@ -102,7 +97,6 @@ function App() {
       alert("Error adding task. Check the console for details.");
     }
   };
-  
 
   const handleDelete = async (id) => {
     try {
@@ -126,11 +120,12 @@ function App() {
     setToken("");
     setTasks([]);
     setUserData(null);
-    localStorage.removeItem('token'); // Clear token from localStorage
+    localStorage.removeItem('token');
   };
 
   const formatDateTime = (dateString) =>
-    new Date(dateString).toLocaleString("en-GB", {
+    new Date(dateString).toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata", // ✅ Convert to IST
       day: "2-digit",
       month: "2-digit",
       year: "numeric",

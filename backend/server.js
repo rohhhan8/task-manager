@@ -3,7 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cron = require("node-cron");
-const path = require("path"); // ✅ Required to serve frontend
+const path = require("path");
 const Task = require("./models/TaskModel");
 const nodemailer = require("nodemailer");
 
@@ -16,23 +16,18 @@ const PORT = process.env.PORT || 5000;
 // MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.error("MongoDB Connection Error:", err));
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-// Import Routes
-const taskRoutes = require("./routes/taskRoutes");
-const authRoutes = require("./routes/authRoutes");
+// Routes
+app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/tasks", require("./routes/taskRoutes"));
 
-// Use Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/tasks", taskRoutes);
-
-// Health Check
 app.get("/health", (req, res) => {
-  res.send("Backend is running...");
+  res.send("✅ Backend is running...");
 });
 
-// Create a transporter for Gmail
+// Email Transport
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -41,47 +36,45 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Send Email Helper
 const sendReminderEmail = (task) => {
   const mailOptions = {
     from: process.env.GMAIL_USER,
     to: task.userEmail,
     subject: `Task Reminder: ${task.title}`,
-    text: `Hi! Just a reminder that your task "${task.title}" is due now. Please take action.`
+    text: `Hi! Just a reminder that your task "${task.title}" is due now. Please take action.`,
   };
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.error("Error sending email:", error);
+      console.error("📧 Email Error:", error);
     } else {
-      console.log(`Email sent: ${info.response}`);
+      console.log(`📨 Email sent: ${info.response}`);
     }
   });
 };
 
-// Cron job to check for reminders
+// Cron: check every minute
 cron.schedule("* * * * *", async () => {
-  console.log("⏰ Cron job running...");
-  const now = new Date(); // Get current UTC time
-
+  const now = new Date();
+  console.log(`⏰ Cron job running at ${now.toISOString()}`);
   try {
     const upcomingTasks = await Task.find({
-      reminder: { $lte: now },  // Ensure reminder is in UTC
-      notified: { $ne: true }
+      reminder: { $lte: now },
+      notified: { $ne: true },
     });
 
     for (const task of upcomingTasks) {
-      console.log(`🔔 Reminder: Task "${task.title}" is due now. User ID: ${task.user}`);
+      console.log(`🔔 Sending reminder for task "${task.title}"`);
       await sendReminderEmail(task);
       task.notified = true;
       await task.save();
     }
   } catch (err) {
-    console.error("Error checking reminders:", err);
+    console.error("🚨 Cron job error:", err);
   }
 });
 
-// ✅ Serve frontend in production
+// Serve frontend
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "frontend", "build")));
 
@@ -90,5 +83,14 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
+// Graceful Shutdown
+process.on("SIGINT", () => {
+  console.log("🛑 SIGINT received. Shutting down...");
+  mongoose.connection.close(false, () => {
+    console.log("📴 MongoDB connection closed.");
+    process.exit(0);
+  });
+});
+
 // Start Server
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
