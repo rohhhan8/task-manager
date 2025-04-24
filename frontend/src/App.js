@@ -10,7 +10,7 @@ function App() {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(localStorage.getItem('token') || ""); // Check localStorage for token
   const [userData, setUserData] = useState(null);
   const [isSignup, setIsSignup] = useState(false);
 
@@ -18,6 +18,7 @@ function App() {
     if (token) {
       fetchTasks();
       fetchUserData();
+      localStorage.setItem('token', token); // Store token in localStorage
     }
   }, [token]);
 
@@ -43,7 +44,7 @@ function App() {
       alert("Signup successful! Please login.");
       setIsSignup(false);
     } catch (error) {
-      alert("Signup failed");
+      alert("Signup failed. Please try again.");
       console.error(error);
     }
   };
@@ -57,7 +58,7 @@ function App() {
       });
       setToken(res.data.token);
     } catch (error) {
-      alert("Login failed");
+      alert("Login failed. Please check your credentials.");
       console.error(error);
     }
   };
@@ -96,11 +97,8 @@ function App() {
       setTask("");
       setReminder("");
     } catch (error) {
-      console.error(
-        "Error adding task:",
-        error.response ? error.response.data : error.message
-      );
-      alert("Error adding task. Check the console for details.");
+      console.error("Error adding task:", error.response ? error.response.data : error.message);
+      alert("Error adding task. Please try again.");
     }
   };
 
@@ -118,7 +116,15 @@ function App() {
       }, 500);
     } catch (error) {
       console.error("Error deleting task:", error);
+      alert("Error deleting task. Please try again.");
     }
+  };
+
+  const handleLogout = () => {
+    setToken("");
+    setTasks([]);
+    setUserData(null);
+    localStorage.removeItem('token'); // Clear token from localStorage
   };
 
   const formatDateTime = (dateString) =>
@@ -195,14 +201,7 @@ function App() {
               Hello, <strong>{userData?.username || "User"}</strong>
             </p>
             <button
-              onClick={() => {
-                setToken("");
-                setTasks([]);
-                setTask("");
-                setReminder("");
-                setIdentifier("");
-                setPassword("");
-              }}
+              onClick={handleLogout}
               className="logout-btn"
             >
               Logout

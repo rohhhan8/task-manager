@@ -62,11 +62,11 @@ const sendReminderEmail = (task) => {
 // Cron job to check for reminders
 cron.schedule("* * * * *", async () => {
   console.log("⏰ Cron job running...");
-  const now = new Date();
+  const now = new Date(); // Get current UTC time
 
   try {
     const upcomingTasks = await Task.find({
-      reminder: { $lte: now },
+      reminder: { $lte: now },  // Ensure reminder is in UTC
       notified: { $ne: true }
     });
 
