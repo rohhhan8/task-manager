@@ -81,6 +81,75 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Root endpoint for when someone visits the main URL
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Task Manager API</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+                padding: 50px;
+                background: linear-gradient(135deg, #4f46e5, #6366f1);
+                color: white;
+                margin: 0;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            }
+            .container {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 40px;
+                border-radius: 20px;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            }
+            h1 { margin-bottom: 20px; font-size: 2.5em; }
+            p { font-size: 1.2em; margin-bottom: 20px; }
+            .api-link {
+                background: rgba(255, 255, 255, 0.2);
+                padding: 15px 30px;
+                border-radius: 10px;
+                text-decoration: none;
+                color: white;
+                font-weight: bold;
+                display: inline-block;
+                transition: all 0.3s;
+                margin: 10px;
+            }
+            .api-link:hover {
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+            }
+            .status { margin-top: 30px; font-size: 0.9em; opacity: 0.8; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🚀 Task Manager API</h1>
+            <p>Backend is running successfully!</p>
+            <p>Database: ${mongoose.connection.readyState === 1 ? '✅ Connected' : '❌ Disconnected'}</p>
+            <a href="/health" class="api-link">Health Check</a>
+            <a href="/api/auth" class="api-link">Auth API</a>
+            <a href="/api/tasks" class="api-link">Tasks API</a>
+            <div class="status">
+                <p>✅ Server Status: Active</p>
+                <p>🔗 API Endpoints Available</p>
+                <p>📊 Ready for Frontend Connection</p>
+            </div>
+        </div>
+    </body>
+    </html>
+  `);
+});
+
 // Routes
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
