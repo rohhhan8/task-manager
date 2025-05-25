@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: task-manager-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        value: mongodb+srv://rohan_mongo18:5y909bwoiqTWJXD4@cluster0.wsbb06d.mongodb.net/myAppDatabase?retryWrites=true&w=majority&appName=TaskManager
+      - key: JWT_SECRET
+        value: task_manager_secure_jwt_secret_2025
+      - key: GMAIL_USER
+        value: rohanbhaikapc@gmail.com
+      - key: GMAIL_PASSWORD
+        value: lpfdcyuxjtlmafxa

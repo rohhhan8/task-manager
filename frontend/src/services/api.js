@@ -1,11 +1,24 @@
 // src/services/api.js
 import axios from 'axios';
 
+// Get API URL from environment or use defaults
+const getApiUrl = () => {
+  // Check for custom environment variable first
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+
+  // Default URLs based on environment
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://your-backend-url.cyclic.app/api'; // Update this after deploying to Cyclic
+  }
+
+  return 'http://localhost:5000/api';
+};
+
 // Create an axios instance with a base URL
 const API = axios.create({
-  baseURL: process.env.NODE_ENV === 'production'
-    ? 'https://task-manager-hd1x.onrender.com/api'
-    : 'http://localhost:5000/api',
+  baseURL: getApiUrl(),
   headers: {
     'Content-Type': 'application/json',
   }

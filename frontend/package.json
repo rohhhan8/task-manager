@@ -20,8 +20,10 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:prod": "REACT_APP_API_URL=https://your-backend-url.cyclic.app/api npm run build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "npm run build && echo 'Ready for deployment to Vercel!'"
   },
   "eslintConfig": {
     "extends": [

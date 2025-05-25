@@ -10,11 +10,20 @@ const nodemailer = require("nodemailer");
 const app = express();
 
 // CORS configuration
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [
+      'https://task-manager-hd1x.onrender.com', // Your current Render frontend URL
+      'https://your-frontend-url.vercel.app', // Update this after deploying to Vercel
+      'https://task-manager-pro.vercel.app', // Alternative domain
+      'https://task-manager-frontend.vercel.app', // Another option
+    ]
+  : ['http://localhost:3000'];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? ['https://task-manager-hd1x.onrender.com']
-    : ['http://localhost:3000'],
-  credentials: true
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -25,7 +34,7 @@ app.use((req, res, next) => {
   next();
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
 // MongoDB Connection with better error handling
 const connectDB = async () => {
