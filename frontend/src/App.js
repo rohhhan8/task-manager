@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
+import { authAPI, tasksAPI } from "./services/api";
 import "./App.css";
 
 function App() {
@@ -13,6 +15,9 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || "");
   const [userData, setUserData] = useState(null);
   const [isSignup, setIsSignup] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [signupError, setSignupError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -24,54 +29,117 @@ function App() {
 
   const fetchUserData = async () => {
     try {
-      const res = await axios.get("/api/auth/user", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authAPI.getUser();
       setUserData(res.data);
     } catch (error) {
       console.error("Error fetching user data:", error);
+      if (error.response && error.response.status === 401) {
+        // Token expired or invalid
+        handleLogout();
+      }
     }
+  };
+
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const validatePassword = (password) => {
+    return password.length >= 6;
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    setSignupError("");
+
+    // Validate inputs
+    if (!validateEmail(email)) {
+      setSignupError("Please enter a valid email address");
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      setSignupError("Password must be at least 6 characters long");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      await axios.post("/api/auth/register", {
+      await authAPI.register({
         username,
         email,
         password,
       });
-      alert("Signup successful! Please login.");
+      setIsLoading(false);
       setIsSignup(false);
+      setEmail("");
+      setUsername("");
+      setPassword("");
+      // Show success message
+      alert("Signup successful! Please login with your new account.");
     } catch (error) {
-      alert("Signup failed. Please try again.");
+      setIsLoading(false);
+      if (error.response && error.response.data) {
+        setSignupError(error.response.data.message || "Signup failed. Please try again.");
+      } else {
+        setSignupError("Signup failed. Please try again later.");
+      }
       console.error(error);
     }
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoginError("");
+
+    if (!identifier.trim() || !password.trim()) {
+      setLoginError("Please enter both username/email and password");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const res = await axios.post("/api/auth/login", {
+      const res = await authAPI.login({
         loginInput: identifier,
         password,
       });
+      setIsLoading(false);
       setToken(res.data.token);
+      setIdentifier("");
+      setPassword("");
     } catch (error) {
-      alert("Login failed. Please check your credentials.");
+      setIsLoading(false);
+      if (error.response && error.response.data) {
+        setLoginError(error.response.data.message || "Login failed. Please check your credentials.");
+      } else {
+        setLoginError("Login failed. Please try again later.");
+      }
       console.error(error);
     }
   };
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get("/api/tasks", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await tasksAPI.getTasks();
       setTasks(res.data);
     } catch (err) {
       console.error("Error fetching tasks:", err);
+      if (err.response && err.response.status === 401) {
+        handleLogout();
+      }
     }
+  };
+
+  // Fix for the 5-hour offset issue
+  const adjustTimeZone = (dateTimeStr) => {
+    if (!dateTimeStr) return "";
+
+    // Create a date object in local time
+    const localDate = new Date(dateTimeStr);
+
+    // Format it to ISO string but keep it as local time
+    // This prevents the automatic conversion to UTC
+    return localDate.toISOString();
   };
 
   const handleSubmit = async (e) => {
@@ -81,20 +149,20 @@ function App() {
     const taskData = { title: task, description: task };
 
     if (reminder) {
-      const localReminder = new Date(reminder);
-      taskData.reminder = localReminder.toISOString(); // ✅ Convert to UTC ISO
+      taskData.reminder = adjustTimeZone(reminder);
     }
 
     try {
-      const res = await axios.post("/api/tasks", taskData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      setIsLoading(true);
+      const res = await tasksAPI.createTask(taskData);
+      setIsLoading(false);
       setTasks([...tasks, res.data]);
       setTask("");
       setReminder("");
     } catch (error) {
+      setIsLoading(false);
       console.error("Error adding task:", error);
-      alert("Error adding task. Check the console for details.");
+      alert("Error adding task. Please try again.");
     }
   };
 
@@ -105,9 +173,7 @@ function App() {
       );
 
       setTimeout(async () => {
-        await axios.delete(`/api/tasks/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await tasksAPI.deleteTask(id);
         setTasks((prev) => prev.filter((item) => item._id !== id));
       }, 500);
     } catch (error) {
@@ -123,23 +189,23 @@ function App() {
     localStorage.removeItem('token');
   };
 
-  const formatDateTime = (dateString) =>
-    new Date(dateString).toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata", // ✅ Convert to IST
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
+  // Improved date formatting with proper timezone handling
+  const formatDateTime = (dateString) => {
+    try {
+      const timeZone = 'Asia/Kolkata';
+      return formatInTimeZone(new Date(dateString), timeZone, 'dd/MM/yyyy HH:mm');
+    } catch (error) {
+      console.error("Date formatting error:", error);
+      return "Invalid date";
+    }
+  };
 
   return (
     <div className="container">
       {!token ? (
         <div className="auth-container">
           <div className="auth-box">
-            <h1>{isSignup ? "Sign Up" : "Login"}</h1>
+            <h1>{isSignup ? "Create Account" : "Welcome Back"}</h1>
             <form onSubmit={isSignup ? handleSignup : handleLogin}>
               {isSignup ? (
                 <>
@@ -152,20 +218,24 @@ function App() {
                   />
                   <input
                     type="email"
-                    placeholder="Email"
+                    placeholder="Email Address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
+                  {signupError && <p className="error-message">{signupError}</p>}
                 </>
               ) : (
-                <input
-                  type="text"
-                  placeholder="Username or Email"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  required
-                />
+                <>
+                  <input
+                    type="text"
+                    placeholder="Username or Email"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    required
+                  />
+                  {loginError && <p className="error-message">{loginError}</p>}
+                </>
               )}
               <input
                 type="password"
@@ -174,14 +244,20 @@ function App() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <button type="submit">{isSignup ? "Sign Up" : "Login"}</button>
+              <button type="submit" disabled={isLoading}>
+                {isLoading ? "Processing..." : isSignup ? "Sign Up" : "Login"}
+              </button>
               <p>
                 {isSignup
                   ? "Already have an account?"
                   : "Don't have an account?"}{" "}
                 <button
                   type="button"
-                  onClick={() => setIsSignup(!isSignup)}
+                  onClick={() => {
+                    setIsSignup(!isSignup);
+                    setLoginError("");
+                    setSignupError("");
+                  }}
                   className="switch-btn"
                 >
                   {isSignup ? "Login" : "Sign Up"}
@@ -217,37 +293,42 @@ function App() {
                 type="text"
                 value={task}
                 onChange={(e) => setTask(e.target.value)}
-                placeholder="Enter task"
+                placeholder="What do you need to do?"
                 required
               />
-              <label style={{ margin: "0 10px" }}>Set Reminder:</label>
+              <label>Set Reminder:</label>
               <input
                 type="datetime-local"
                 value={reminder}
                 onChange={(e) => setReminder(e.target.value)}
               />
-              <button type="submit">Add Task</button>
+              <button type="submit" disabled={isLoading}>
+                {isLoading ? "Adding..." : "Add Task"}
+              </button>
             </form>
 
             <section className="task-list">
               <h3>Your Tasks</h3>
-              <ul>
-                {tasks.map((item) => (
-                  <li key={item._id} className={item.deleted ? "deleted" : ""}>
-                    <strong>{item.title}</strong>
-                    <br />
-                    <small>Created: {formatDateTime(item.createdAt)}</small>
-                    <br />
-                    {item.reminder && (
-                      <small>Reminder: {formatDateTime(item.reminder)}</small>
-                    )}
-                    <br />
-                    <button onClick={() => handleDelete(item._id)}>
-                      Delete
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              {tasks.length === 0 ? (
+                <div className="empty-state">
+                  <p>You don't have any tasks yet. Add your first task above!</p>
+                </div>
+              ) : (
+                <ul>
+                  {tasks.map((item) => (
+                    <li key={item._id} className={item.deleted ? "deleted" : ""}>
+                      <strong>{item.title}</strong>
+                      <small>Created: {formatDateTime(item.createdAt)}</small>
+                      {item.reminder && (
+                        <small>Reminder: {formatDateTime(item.reminder)}</small>
+                      )}
+                      <button onClick={() => handleDelete(item._id)}>
+                        Delete
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
           </main>
         </div>
