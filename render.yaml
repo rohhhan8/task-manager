@@ -1,11 +1,11 @@
 services:
+  # Backend API Service
   - type: web
     name: task-manager-backend
     env: node
     plan: free
-    buildCommand: npm install
-    startCommand: node server.js
-    rootDir: backend
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -17,3 +17,12 @@ services:
         value: rohanbhaikapc@gmail.com
       - key: GMAIL_PASSWORD
         value: lpfdcyuxjtlmafxa
+
+  # Frontend Static Site Service
+  - type: static
+    name: task-manager-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://task-manager-hd1x.onrender.com/api

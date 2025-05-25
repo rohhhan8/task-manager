@@ -10,7 +10,7 @@ const getApiUrl = () => {
 
   // Default URLs based on environment
   if (process.env.NODE_ENV === 'production') {
-    return 'https://your-backend-url.cyclic.app/api'; // Update this after deploying to Cyclic
+    return 'https://task-manager-hd1x.onrender.com/api'; // Your current Render backend URL
   }
 
   return 'http://localhost:5000/api';

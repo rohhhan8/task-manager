@@ -81,8 +81,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Root endpoint for when someone visits the main URL
-app.get('/', (req, res) => {
+// API status endpoint for development
+app.get('/api-status', (req, res) => {
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -154,6 +154,17 @@ app.get('/', (req, res) => {
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
 
+// Serve static files from frontend build directory
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the frontend build directory
+  app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+  });
+}
+
 // Email Transport
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -201,14 +212,7 @@ cron.schedule("* * * * *", async () => {
   }
 });
 
-// Serve frontend
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "frontend", "build")));
 
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "frontend", "build", "index.html"));
-  });
-}
 
 // Graceful Shutdown
 process.on("SIGINT", () => {
