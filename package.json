@@ -1,28 +1,4 @@
 {
-  "name": "task-manager-fullstack",
-  "version": "1.0.0",
-  "description": "Task Manager with JWT Auth and Email Reminders",
-  "main": "backend/server.js",
-  "scripts": {
-    "start": "cd backend && node server.js",
-    "build": "echo 'Backend only - no build needed'",
-    "install-backend": "cd backend && npm install",
-    "install-frontend": "cd frontend && npm install",
-    "dev": "cd backend && node server.js"
-  },
-  "engines": {
-    "node": ">=14.0.0",
-    "npm": ">=6.0.0"
-  },
-  "keywords": [
-    "task-manager",
-    "react",
-    "nodejs",
-    "mongodb",
-    "jwt"
-  ],
-  "author": "Rohan",
-  "license": "ISC",
   "dependencies": {
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",

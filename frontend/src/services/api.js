@@ -1,24 +1,11 @@
 // src/services/api.js
 import axios from 'axios';
 
-// Get API URL from environment or use defaults
-const getApiUrl = () => {
-  // Check for custom environment variable first
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
-  }
-
-  // Default URLs based on environment
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://task-manager-hd1x.onrender.com/api'; // Your current Render backend URL
-  }
-
-  return 'http://localhost:5000/api';
-};
-
 // Create an axios instance with a base URL
 const API = axios.create({
-  baseURL: getApiUrl(),
+  baseURL: process.env.NODE_ENV === 'production'
+    ? 'https://task-manager-hd1x.onrender.com/api'
+    : 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   }
